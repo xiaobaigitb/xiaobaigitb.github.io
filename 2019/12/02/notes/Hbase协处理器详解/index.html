@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="Piece One">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="notes/Hbase协处理器详解"/>
+  <meta property="og:description" content="爱吃鱼的Blog" />
+  <meta property="og:site_name" content="TLUYZ&#39;Blog"/>
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="http://yoursite.com"/>
+  
+    <link rel="alternate" href="/atom.xml" title="TLUYZ&#39;Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>TLUYZ'Blog</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">notes/Hbase协处理器详解</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/xiaobaigitb" target="_blank" rel="noopener">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:<your-email-address>">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Piece One</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-12-02</span>
+            <span class="time">22:05:46</span>
+          </span>
+          
+        </div>
+        <!-- Tags -->
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <h1 id="Hbase-协处理器"><a href="#Hbase-协处理器" class="headerlink" title="Hbase 协处理器"></a>Hbase 协处理器</h1><nav>
+<a href="#一简述">一、简述</a><br/>
+<a href="#二协处理器类型">二、协处理器类型</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#21-Observer协处理器">2.1 Observer协处理器</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#22--Endpoint协处理器">2.2  Endpoint协处理器</a><br/>
+<a href="#三协处理的加载方式">三、协处理的加载方式</a><br/>
+<a href="#四静态加载与卸载">四、静态加载与卸载</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#41-静态加载">4.1 静态加载</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#42-静态卸载">4.2 静态卸载</a><br/>
+<a href="#五动态加载与卸载">五、动态加载与卸载</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#51-HBase-Shell动态加载">5.1 HBase Shell动态加载</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#52-HBase-Shell动态卸载">5.2 HBase Shell动态卸载</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#53-Java-API-动态加载">5.3 Java API 动态加载</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#54-Java-API-动态卸载">5.4 Java API 动态卸载</a><br/>
+<a href="#六协处理器案例">六、协处理器案例</a><br/>
+</nav>
+
+
+<h2 id="一、简述"><a href="#一、简述" class="headerlink" title="一、简述"></a>一、简述</h2><p>在使用 HBase 时，如果你的数据量达到了数十亿行或数百万列，此时能否在查询中返回大量数据将受制于网络的带宽，即便网络状况允许，但是客户端的计算处理也未必能够满足要求。在这种情况下，协处理器（Coprocessors）应运而生。它允许你将业务计算代码放入在 RegionServer 的协处理器中，将处理好的数据再返回给客户端，这可以极大地降低需要传输的数据量，从而获得性能上的提升。同时协处理器也允许用户扩展实现 HBase 目前所不具备的功能，如权限校验、二级索引、完整性约束等。</p>
+<h2 id="二、协处理器类型"><a href="#二、协处理器类型" class="headerlink" title="二、协处理器类型"></a>二、协处理器类型</h2><h3 id="2-1-Observer协处理器"><a href="#2-1-Observer协处理器" class="headerlink" title="2.1 Observer协处理器"></a>2.1 Observer协处理器</h3><h4 id="1-功能"><a href="#1-功能" class="headerlink" title="1. 功能"></a>1. 功能</h4><p>Observer 协处理器类似于关系型数据库中的触发器，当发生某些事件的时候这类协处理器会被 Server 端调用。通常可以用来实现下面功能：</p>
+<ul>
+<li><strong>权限校验</strong>：在执行 <code>Get</code> 或 <code>Put</code> 操作之前，您可以使用 <code>preGet</code> 或 <code>prePut</code> 方法检查权限；</li>
+<li><strong>完整性约束</strong>： HBase 不支持关系型数据库中的外键功能，可以通过触发器在插入或者删除数据的时候，对关联的数据进行检查；</li>
+<li><strong>二级索引</strong>： 可以使用协处理器来维护二级索引。</li>
+</ul>
+</br>
+
+<h4 id="2-类型"><a href="#2-类型" class="headerlink" title="2. 类型"></a>2. 类型</h4><p>当前 Observer 协处理器有以下四种类型：</p>
+<ul>
+<li><strong>RegionObserver</strong> :<br>允许您观察 Region 上的事件，例如 Get 和 Put 操作。</li>
+<li><strong>RegionServerObserver</strong> :<br>允许您观察与 RegionServer 操作相关的事件，例如启动，停止或执行合并，提交或回滚。</li>
+<li><strong>MasterObserver</strong> :<br>允许您观察与 HBase Master 相关的事件，例如表创建，删除或 schema 修改。</li>
+<li><strong>WalObserver</strong> :<br>允许您观察与预写日志（WAL）相关的事件。</li>
+</ul>
+</br>
+
+<h4 id="3-接口"><a href="#3-接口" class="headerlink" title="3. 接口"></a>3. 接口</h4><p>以上四种类型的 Observer 协处理器均继承自 <code>Coprocessor</code> 接口，这四个接口中分别定义了所有可用的钩子方法，以便在对应方法前后执行特定的操作。通常情况下，我们并不会直接实现上面接口，而是继承其 Base 实现类，Base 实现类只是简单空实现了接口中的方法，这样我们在实现自定义的协处理器时，就不必实现所有方法，只需要重写必要方法即可。</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase-coprocessor.png"/> </div>
+
+<p>这里以 <code>RegionObservers</code> 为例，其接口类中定义了所有可用的钩子方法，下面截取了部分方法的定义，多数方法都是成对出现的，有 <code>pre</code> 就有 <code>post</code>：</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/RegionObserver.png"/> </div>
+
+</br>
+
+<h4 id="4-执行流程"><a href="#4-执行流程" class="headerlink" title="4. 执行流程"></a>4. 执行流程</h4><div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/RegionObservers-works.png"/> </div>
+
+<ul>
+<li>客户端发出 put 请求</li>
+<li>该请求被分派给合适的 RegionServer 和 region</li>
+<li>coprocessorHost 拦截该请求，然后在该表的每个 RegionObserver 上调用 prePut()</li>
+<li>如果没有被 <code>prePut()</code> 拦截，该请求继续送到 region，然后进行处理</li>
+<li>region 产生的结果再次被 CoprocessorHost 拦截，调用 <code>postPut()</code></li>
+<li>假如没有 <code>postPut()</code> 拦截该响应，最终结果被返回给客户端</li>
+</ul>
+<p>如果大家了解 Spring，可以将这种执行方式类比于其 AOP 的执行原理即可，官方文档当中也是这样类比的：</p>
+<blockquote>
+<p>If you are familiar with Aspect Oriented Programming (AOP), you can think of a coprocessor as applying advice by intercepting a request and then running some custom code,before passing the request on to its final destination (or even changing the destination).</p>
+<p>如果您熟悉面向切面编程（AOP），您可以将协处理器视为通过拦截请求然后运行一些自定义代码来使用 Advice，然后将请求传递到其最终目标（或者更改目标）。</p>
+</blockquote>
+<h3 id="2-2-Endpoint协处理器"><a href="#2-2-Endpoint协处理器" class="headerlink" title="2.2  Endpoint协处理器"></a>2.2  Endpoint协处理器</h3><p>Endpoint 协处理器类似于关系型数据库中的存储过程。客户端可以调用 Endpoint 协处理器在服务端对数据进行处理，然后再返回。</p>
+<p>以聚集操作为例，如果没有协处理器，当用户需要找出一张表中的最大数据，即 max 聚合操作，就必须进行全表扫描，然后在客户端上遍历扫描结果，这必然会加重了客户端处理数据的压力。利用 Coprocessor，用户可以将求最大值的代码部署到 HBase Server 端，HBase 将利用底层 cluster 的多个节点并发执行求最大值的操作。即在每个 Region 范围内执行求最大值的代码，将每个 Region 的最大值在 Region Server 端计算出来，仅仅将该 max 值返回给客户端。之后客户端只需要将每个 Region 的最大值进行比较而找到其中最大的值即可。</p>
+<h2 id="三、协处理的加载方式"><a href="#三、协处理的加载方式" class="headerlink" title="三、协处理的加载方式"></a>三、协处理的加载方式</h2><p>要使用我们自己开发的协处理器，必须通过静态（使用 HBase 配置）或动态（使用 HBase Shell 或 Java API）加载它。</p>
+<ul>
+<li>静态加载的协处理器称之为 <strong>System Coprocessor</strong>（系统级协处理器）,作用范围是整个 HBase 上的所有表，需要重启 HBase 服务；</li>
+<li>动态加载的协处理器称之为 <strong>Table Coprocessor</strong>（表处理器），作用于指定的表，不需要重启 HBase 服务。</li>
+</ul>
+<p>其加载和卸载方式分别介绍如下。</p>
+<h2 id="四、静态加载与卸载"><a href="#四、静态加载与卸载" class="headerlink" title="四、静态加载与卸载"></a>四、静态加载与卸载</h2><h3 id="4-1-静态加载"><a href="#4-1-静态加载" class="headerlink" title="4.1 静态加载"></a>4.1 静态加载</h3><p>静态加载分以下三步：</p>
+<ol>
+<li>在 <code>hbase-site.xml</code> 定义需要加载的协处理器。</li>
+</ol>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">name</span>&gt;</span>hbase.coprocessor.region.classes<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">value</span>&gt;</span>org.myname.hbase.coprocessor.endpoint.SumEndPoint<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span></pre></td></tr></table></figure>
+
+<p> <code>&lt;name&gt;</code> 标签的值必须是下面其中之一：</p>
+<ul>
+<li><p>RegionObservers 和 Endpoints 协处理器：<code>hbase.coprocessor.region.classes</code> </p>
+</li>
+<li><p>WALObservers 协处理器： <code>hbase.coprocessor.wal.classes</code> </p>
+</li>
+<li><p>MasterObservers 协处理器：<code>hbase.coprocessor.master.classes</code></p>
+<p><code>&lt;value&gt;</code> 必须是协处理器实现类的全限定类名。如果为加载指定了多个类，则类名必须以逗号分隔。</p>
+</li>
+</ul>
+<ol start="2">
+<li><p>将 jar(包含代码和所有依赖项) 放入 HBase 安装目录中的 <code>lib</code> 目录下；</p>
+</li>
+<li><p>重启 HBase。</p>
+</li>
+</ol>
+</br>
+
+<h3 id="4-2-静态卸载"><a href="#4-2-静态卸载" class="headerlink" title="4.2 静态卸载"></a>4.2 静态卸载</h3><ol>
+<li><p>从 hbase-site.xml 中删除配置的协处理器的&lt;property&gt;元素及其子元素；</p>
+</li>
+<li><p>从类路径或 HBase 的 lib 目录中删除协处理器的 JAR 文件（可选）；</p>
+</li>
+<li><p>重启 HBase。</p>
+</li>
+</ol>
+<h2 id="五、动态加载与卸载"><a href="#五、动态加载与卸载" class="headerlink" title="五、动态加载与卸载"></a>五、动态加载与卸载</h2><p>使用动态加载协处理器，不需要重新启动 HBase。但动态加载的协处理器是基于每个表加载的，只能用于所指定的表。<br>此外，在使用动态加载必须使表脱机（disable）以加载协处理器。动态加载通常有两种方式：Shell 和 Java API 。 </p>
+<blockquote>
+<p>以下示例基于两个前提：</p>
+<ol>
+<li>coprocessor.jar 包含协处理器实现及其所有依赖项。</li>
+<li>JAR 包存放在 HDFS 上的路径为：hdfs：// &lt;namenode&gt;：&lt;port&gt; / user / &lt;hadoop-user&gt; /coprocessor.jar</li>
+</ol>
+</blockquote>
+<h3 id="5-1-HBase-Shell动态加载"><a href="#5-1-HBase-Shell动态加载" class="headerlink" title="5.1 HBase Shell动态加载"></a>5.1 HBase Shell动态加载</h3><ol>
+<li>使用 HBase Shell 禁用表</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt; disable 'tableName'</span></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>使用如下命令加载协处理器</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt; alter 'tableName', METHOD =&gt; 'table_att', 'Coprocessor'=&gt;'hdfs://&lt;namenode&gt;:&lt;port&gt;/</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">user/&lt;hadoop-user&gt;/coprocessor.jar| org.myname.hbase.Coprocessor.RegionObserverExample|1073741823|</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">arg1=1,arg2=2'</span></pre></td></tr></table></figure>
+
+<p><code>Coprocessor</code> 包含由管道（|）字符分隔的四个参数，按顺序解释如下：</p>
+<ul>
+<li><p><strong>JAR 包路径</strong>：通常为 JAR 包在 HDFS 上的路径。关于路径以下两点需要注意：</p>
+</li>
+<li><p>允许使用通配符，例如：<code>hdfs://&lt;namenode&gt;:&lt;port&gt;/user/&lt;hadoop-user&gt;/*.jar</code> 来添加指定的 JAR 包；</p>
+</li>
+<li><p>可以使指定目录，例如：<code>hdfs://&lt;namenode&gt;:&lt;port&gt;/user/&lt;hadoop-user&gt;/</code> ，这会添加目录中的所有 JAR 包，但不会搜索子目录中的 JAR 包。</p>
+</li>
+<li><p><strong>类名</strong>：协处理器的完整类名。</p>
+</li>
+<li><p><strong>优先级</strong>：协处理器的优先级，遵循数字的自然序，即值越小优先级越高。可以为空，在这种情况下，将分配默认优先级值。</p>
+</li>
+<li><p><strong>可选参数</strong> ：传递的协处理器的可选参数。</p>
+</li>
+</ul>
+<ol start="3">
+<li>启用表</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt; enable 'tableName'</span></pre></td></tr></table></figure>
+
+<ol start="4">
+<li>验证协处理器是否已加载</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt; describe 'tableName'</span></pre></td></tr></table></figure>
+
+<p>协处理器出现在 <code>TABLE_ATTRIBUTES</code> 属性中则代表加载成功。</p>
+</br>
+
+<h3 id="5-2-HBase-Shell动态卸载"><a href="#5-2-HBase-Shell动态卸载" class="headerlink" title="5.2 HBase Shell动态卸载"></a>5.2 HBase Shell动态卸载</h3><ol>
+<li><p>禁用表</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> <span class="built_in">disable</span> <span class="string">'tableName'</span></span></span></pre></td></tr></table></figure>
+</li>
+<li><p>移除表协处理器</p>
+</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> alter <span class="string">'tableName'</span>, METHOD =&gt; <span class="string">'table_att_unset'</span>, NAME =&gt; <span class="string">'coprocessor$1'</span></span></span></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>启用表</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> <span class="built_in">enable</span> <span class="string">'tableName'</span></span></span></pre></td></tr></table></figure>
+
+</br>
+
+<h3 id="5-3-Java-API-动态加载"><a href="#5-3-Java-API-动态加载" class="headerlink" title="5.3 Java API 动态加载"></a>5.3 Java API 动态加载</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">TableName tableName = TableName.valueOf(<span class="string">"users"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">String path = <span class="string">"hdfs://&lt;namenode&gt;:&lt;port&gt;/user/&lt;hadoop-user&gt;/coprocessor.jar"</span>;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">Configuration conf = HBaseConfiguration.create();</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">Connection connection = ConnectionFactory.createConnection(conf);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">Admin admin = connection.getAdmin();</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">admin.disableTable(tableName);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">HTableDescriptor hTableDescriptor = <span class="keyword">new</span> HTableDescriptor(tableName);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">HColumnDescriptor columnFamily1 = <span class="keyword">new</span> HColumnDescriptor(<span class="string">"personalDet"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">columnFamily1.setMaxVersions(<span class="number">3</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">hTableDescriptor.addFamily(columnFamily1);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">HColumnDescriptor columnFamily2 = <span class="keyword">new</span> HColumnDescriptor(<span class="string">"salaryDet"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line">columnFamily2.setMaxVersions(<span class="number">3</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">13</span></pre></td><td class="code"><pre><span class="line">hTableDescriptor.addFamily(columnFamily2);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">14</span></pre></td><td class="code"><pre><span class="line">hTableDescriptor.setValue(<span class="string">"COPROCESSOR$1"</span>, path + <span class="string">"|"</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">15</span></pre></td><td class="code"><pre><span class="line">+ RegionObserverExample.class.getCanonicalName() + "|"</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">16</span></pre></td><td class="code"><pre><span class="line">+ Coprocessor.PRIORITY_USER);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">17</span></pre></td><td class="code"><pre><span class="line">admin.modifyTable(tableName, hTableDescriptor);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">18</span></pre></td><td class="code"><pre><span class="line">admin.enableTable(tableName);</span></pre></td></tr></table></figure>
+
+<p>在 HBase 0.96 及其以后版本中，HTableDescriptor 的 addCoprocessor() 方法提供了一种更为简便的加载方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">TableName tableName = TableName.valueOf(<span class="string">"users"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">"hdfs://&lt;namenode&gt;:&lt;port&gt;/user/&lt;hadoop-user&gt;/coprocessor.jar"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">Configuration conf = HBaseConfiguration.create();</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">Connection connection = ConnectionFactory.createConnection(conf);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">Admin admin = connection.getAdmin();</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">admin.disableTable(tableName);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">HTableDescriptor hTableDescriptor = <span class="keyword">new</span> HTableDescriptor(tableName);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">HColumnDescriptor columnFamily1 = <span class="keyword">new</span> HColumnDescriptor(<span class="string">"personalDet"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">columnFamily1.setMaxVersions(<span class="number">3</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">hTableDescriptor.addFamily(columnFamily1);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">HColumnDescriptor columnFamily2 = <span class="keyword">new</span> HColumnDescriptor(<span class="string">"salaryDet"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line">columnFamily2.setMaxVersions(<span class="number">3</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">13</span></pre></td><td class="code"><pre><span class="line">hTableDescriptor.addFamily(columnFamily2);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">14</span></pre></td><td class="code"><pre><span class="line">hTableDescriptor.addCoprocessor(RegionObserverExample<span class="class">.<span class="keyword">class</span>.<span class="title">getCanonicalName</span>(), <span class="title">path</span>,</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">15</span></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="title">Coprocessor</span>.<span class="title">PRIORITY_USER</span>, <span class="title">null</span>)</span>;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">16</span></pre></td><td class="code"><pre><span class="line">admin.modifyTable(tableName, hTableDescriptor);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">17</span></pre></td><td class="code"><pre><span class="line">admin.enableTable(tableName);</span></pre></td></tr></table></figure>
+
+
+
+<h3 id="5-4-Java-API-动态卸载"><a href="#5-4-Java-API-动态卸载" class="headerlink" title="5.4 Java API 动态卸载"></a>5.4 Java API 动态卸载</h3><p>卸载其实就是重新定义表但不设置协处理器。这会删除所有表上的协处理器。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">TableName tableName = TableName.valueOf(<span class="string">"users"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">String path = <span class="string">"hdfs://&lt;namenode&gt;:&lt;port&gt;/user/&lt;hadoop-user&gt;/coprocessor.jar"</span>;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">Configuration conf = HBaseConfiguration.create();</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">Connection connection = ConnectionFactory.createConnection(conf);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">Admin admin = connection.getAdmin();</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">admin.disableTable(tableName);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">HTableDescriptor hTableDescriptor = <span class="keyword">new</span> HTableDescriptor(tableName);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">HColumnDescriptor columnFamily1 = <span class="keyword">new</span> HColumnDescriptor(<span class="string">"personalDet"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">columnFamily1.setMaxVersions(<span class="number">3</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">hTableDescriptor.addFamily(columnFamily1);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">HColumnDescriptor columnFamily2 = <span class="keyword">new</span> HColumnDescriptor(<span class="string">"salaryDet"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line">columnFamily2.setMaxVersions(<span class="number">3</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">13</span></pre></td><td class="code"><pre><span class="line">hTableDescriptor.addFamily(columnFamily2);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">14</span></pre></td><td class="code"><pre><span class="line">admin.modifyTable(tableName, hTableDescriptor);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">15</span></pre></td><td class="code"><pre><span class="line">admin.enableTable(tableName);</span></pre></td></tr></table></figure>
+
+
+
+<h2 id="六、协处理器案例"><a href="#六、协处理器案例" class="headerlink" title="六、协处理器案例"></a>六、协处理器案例</h2><p>这里给出一个简单的案例，实现一个类似于 Redis 中 <code>append</code> 命令的协处理器，当我们对已有列执行 put 操作时候，HBase 默认执行的是 update 操作，这里我们修改为执行 append 操作。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> redis append 命令示例</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line"><span class="meta">redis&gt;</span><span class="bash">  EXISTS mykey</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">(integer) 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line"><span class="meta">redis&gt;</span><span class="bash">  APPEND mykey <span class="string">"Hello"</span></span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">(integer) 5</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line"><span class="meta">redis&gt;</span><span class="bash">  APPEND mykey <span class="string">" World"</span></span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">(integer) 11</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line"><span class="meta">redis&gt;</span><span class="bash">  GET mykey </span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">"Hello World"</span></pre></td></tr></table></figure>
+
+<h3 id="6-1-创建测试表"><a href="#6-1-创建测试表" class="headerlink" title="6.1 创建测试表"></a>6.1 创建测试表</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 创建一张杂志表 有文章和图片两个列族</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">hbase &gt;  create 'magazine','article','picture'</span></pre></td></tr></table></figure>
+
+<h3 id="6-2-协处理器编程"><a href="#6-2-协处理器编程" class="headerlink" title="6.2 协处理器编程"></a>6.2 协处理器编程</h3><blockquote>
+<p>完整代码可见本仓库：<a href="https://github.com/heibaiying/BigData-Notes/tree/master/code/Hbase\hbase-observer-coprocessor" target="_blank" rel="noopener">hbase-observer-coprocessor</a></p>
+</blockquote>
+<p>新建 Maven 工程，导入下面依赖：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.hbase<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hbase-common<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.hbase<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hbase-server<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span></pre></td></tr></table></figure>
+
+<p>继承 <code>BaseRegionObserver</code> 实现我们自定义的 <code>RegionObserver</code>,对相同的 <code>article:content</code> 执行 put 命令时，将新插入的内容添加到原有内容的末尾，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AppendRegionObserver</span> <span class="keyword">extends</span> <span class="title">BaseRegionObserver</span> </span>&#123;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line"></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">    <span class="keyword">private</span> <span class="keyword">byte</span>[] columnFamily = Bytes.toBytes(<span class="string">"article"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">    <span class="keyword">private</span> <span class="keyword">byte</span>[] qualifier = Bytes.toBytes(<span class="string">"content"</span>);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line"></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">    <span class="meta">@Override</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">prePut</span><span class="params">(ObserverContext&lt;RegionCoprocessorEnvironment&gt; e, Put put, WALEdit edit,</span></span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="params">                       Durability durability)</span> <span class="keyword">throws</span> IOException </span>&#123;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">        <span class="keyword">if</span> (put.has(columnFamily, qualifier)) &#123;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">            <span class="comment">// 遍历查询结果，获取指定列的原值</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">            Result rs = e.getEnvironment().getRegion().get(<span class="keyword">new</span> Get(put.getRow()));</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line">            String oldValue = <span class="string">""</span>;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">13</span></pre></td><td class="code"><pre><span class="line">            <span class="keyword">for</span> (Cell cell : rs.rawCells())</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">14</span></pre></td><td class="code"><pre><span class="line">                <span class="keyword">if</span> (CellUtil.matchingColumn(cell, columnFamily, qualifier)) &#123;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">15</span></pre></td><td class="code"><pre><span class="line">                    oldValue = Bytes.toString(CellUtil.cloneValue(cell));</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">16</span></pre></td><td class="code"><pre><span class="line">                &#125;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">17</span></pre></td><td class="code"><pre><span class="line"></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">18</span></pre></td><td class="code"><pre><span class="line">            <span class="comment">// 获取指定列新插入的值</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">19</span></pre></td><td class="code"><pre><span class="line">            List&lt;Cell&gt; cells = put.get(columnFamily, qualifier);</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">20</span></pre></td><td class="code"><pre><span class="line">            String newValue = <span class="string">""</span>;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">21</span></pre></td><td class="code"><pre><span class="line">            <span class="keyword">for</span> (Cell cell : cells) &#123;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">22</span></pre></td><td class="code"><pre><span class="line">                <span class="keyword">if</span> (CellUtil.matchingColumn(cell, columnFamily, qualifier)) &#123;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">23</span></pre></td><td class="code"><pre><span class="line">                    newValue = Bytes.toString(CellUtil.cloneValue(cell));</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">24</span></pre></td><td class="code"><pre><span class="line">                &#125;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">25</span></pre></td><td class="code"><pre><span class="line">            &#125;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">26</span></pre></td><td class="code"><pre><span class="line"></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">27</span></pre></td><td class="code"><pre><span class="line">            <span class="comment">// Append 操作</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">28</span></pre></td><td class="code"><pre><span class="line">            put.addColumn(columnFamily, qualifier, Bytes.toBytes(oldValue + newValue));</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">29</span></pre></td><td class="code"><pre><span class="line">        &#125;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">30</span></pre></td><td class="code"><pre><span class="line">    &#125;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">31</span></pre></td><td class="code"><pre><span class="line">&#125;</span></pre></td></tr></table></figure>
+
+<h3 id="6-3-打包项目"><a href="#6-3-打包项目" class="headerlink" title="6.3 打包项目"></a>6.3 打包项目</h3><p>使用 maven 命令进行打包，打包后的文件名为 <code>hbase-observer-coprocessor-1.0-SNAPSHOT.jar</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> mvn clean package</span></span></pre></td></tr></table></figure>
+
+<h3 id="6-4-上传JAR包到HDFS"><a href="#6-4-上传JAR包到HDFS" class="headerlink" title="6.4 上传JAR包到HDFS"></a>6.4 上传JAR包到HDFS</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 上传项目到HDFS上的hbase目录</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">hadoop fs -put /usr/app/hbase-observer-coprocessor-1.0-SNAPSHOT.jar /hbase</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看上传是否成功</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">hadoop fs -ls /hbase</span></pre></td></tr></table></figure>
+
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase-cp-hdfs.png"/> </div>
+
+<h3 id="6-5-加载协处理器"><a href="#6-5-加载协处理器" class="headerlink" title="6.5 加载协处理器"></a>6.5 加载协处理器</h3><ol>
+<li>加载协处理器前需要先禁用表</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt;  disable 'magazine'</span></pre></td></tr></table></figure>
+<ol start="2">
+<li>加载协处理器</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt;   alter 'magazine', METHOD =&gt; 'table_att', 'Coprocessor'=&gt;'hdfs://hadoop001:8020/hbase/hbase-observer-coprocessor-1.0-SNAPSHOT.jar|com.heibaiying.AppendRegionObserver|1001|'</span></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>启用表</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt;  enable 'magazine'</span></pre></td></tr></table></figure>
+
+<ol start="4">
+<li>查看协处理器是否加载成功</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt;  desc 'magazine'</span></pre></td></tr></table></figure>
+
+<p>协处理器出现在 <code>TABLE_ATTRIBUTES</code> 属性中则代表加载成功，如下图：</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase-cp-load.png"/> </div>
+
+<h3 id="6-6-测试加载结果"><a href="#6-6-测试加载结果" class="headerlink" title="6.6 测试加载结果"></a>6.6 测试加载结果</h3><p>插入一组测试数据：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt; put 'magazine', 'rowkey1','article:content','Hello'</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">hbase &gt; get 'magazine','rowkey1','article:content'</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">hbase &gt; put 'magazine', 'rowkey1','article:content','World'</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">hbase &gt; get 'magazine','rowkey1','article:content'</span></pre></td></tr></table></figure>
+
+<p>可以看到对于指定列的值已经执行了 append 操作：</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase-cp-helloworld.png"/> </div>
+
+<p>插入一组对照数据：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt; put 'magazine', 'rowkey1','article:author','zhangsan'</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">hbase &gt; get 'magazine','rowkey1','article:author'</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">hbase &gt; put 'magazine', 'rowkey1','article:author','lisi'</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">hbase &gt; get 'magazine','rowkey1','article:author'</span></pre></td></tr></table></figure>
+
+<p>可以看到对于正常的列还是执行 update 操作:</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase-cp-lisi.png"/> </div>
+
+<h3 id="6-7-卸载协处理器"><a href="#6-7-卸载协处理器" class="headerlink" title="6.7 卸载协处理器"></a>6.7 卸载协处理器</h3><ol>
+<li>卸载协处理器前需要先禁用表</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt;  disable 'magazine'</span></pre></td></tr></table></figure>
+<ol start="2">
+<li>卸载协处理器</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt; alter 'magazine', METHOD =&gt; 'table_att_unset', NAME =&gt; 'coprocessor$1'</span></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>启用表</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt;  enable 'magazine'</span></pre></td></tr></table></figure>
+
+<ol start="4">
+<li>查看协处理器是否卸载成功</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt;  desc 'magazine'</span></pre></td></tr></table></figure>
+
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase-co-unload.png"/> </div>
+
+<h3 id="6-8-测试卸载结果"><a href="#6-8-测试卸载结果" class="headerlink" title="6.8 测试卸载结果"></a>6.8 测试卸载结果</h3><p>依次执行下面命令可以测试卸载是否成功</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase &gt; get 'magazine','rowkey1','article:content'</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">hbase &gt; put 'magazine', 'rowkey1','article:content','Hello'</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">hbase &gt; get 'magazine','rowkey1','article:content'</span></pre></td></tr></table></figure>
+
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase-unload-test.png"/> </div>
+
+
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ol>
+<li><a href="http://hbase.apache.org/book.html#cp" target="_blank" rel="noopener">Apache HBase Coprocessors</a></li>
+<li><a href="https://blogs.apache.org/hbase/entry/coprocessor_introduction" target="_blank" rel="noopener">Apache HBase Coprocessor Introduction</a></li>
+<li><a href="https://www.itread01.com/content/1546245908.html" target="_blank" rel="noopener">HBase 高階知識</a></li>
+</ol>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        <p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+

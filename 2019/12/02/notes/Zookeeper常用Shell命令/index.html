@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="Piece One">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="notes/Zookeeper常用Shell命令"/>
+  <meta property="og:description" content="爱吃鱼的Blog" />
+  <meta property="og:site_name" content="TLUYZ&#39;Blog"/>
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="http://yoursite.com"/>
+  
+    <link rel="alternate" href="/atom.xml" title="TLUYZ&#39;Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>TLUYZ'Blog</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">notes/Zookeeper常用Shell命令</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/xiaobaigitb" target="_blank" rel="noopener">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:<your-email-address>">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Piece One</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-12-02</span>
+            <span class="time">22:05:46</span>
+          </span>
+          
+        </div>
+        <!-- Tags -->
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <h1 id="Zookeeper常用Shell命令"><a href="#Zookeeper常用Shell命令" class="headerlink" title="Zookeeper常用Shell命令"></a>Zookeeper常用Shell命令</h1><nav>
+<a href="#一节点增删改查">一、节点增删改查</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#11-启动服务和连接服务">1.1 启动服务和连接服务</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#12-help命令">1.2 help命令</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#13-查看节点列表">1.3 查看节点列表</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#14-新增节点">1.4 新增节点</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#15-查看节点">1.5 查看节点</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#16-更新节点">1.6 更新节点</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#17-删除节点">1.7 删除节点</a><br/>
+<a href="#二监听器">二、监听器</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#21-get-path-[watch]">2.1 get path [watch]</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#22-stat-path-[watch]">2.2 stat path [watch]</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#23-lsls2-path--[watch]">2.3 ls\ls2 path  [watch]</a><br/>
+<a href="#三-zookeeper-四字命令">三、 zookeeper 四字命令</a><br/>
+</nav>
+
+
+<h2 id="一、节点增删改查"><a href="#一、节点增删改查" class="headerlink" title="一、节点增删改查"></a>一、节点增删改查</h2><h3 id="1-1-启动服务和连接服务"><a href="#1-1-启动服务和连接服务" class="headerlink" title="1.1 启动服务和连接服务"></a>1.1 启动服务和连接服务</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动服务</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">bin/zkServer.sh start</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line"></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">连接服务 不指定服务地址则默认连接到localhost:2181</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">zkCli.sh -server hadoop001:2181</span></pre></td></tr></table></figure>
+
+<h3 id="1-2-help命令"><a href="#1-2-help命令" class="headerlink" title="1.2 help命令"></a>1.2 help命令</h3><p>使用 <code>help</code> 可以查看所有命令及格式。</p>
+<h3 id="1-3-查看节点列表"><a href="#1-3-查看节点列表" class="headerlink" title="1.3 查看节点列表"></a>1.3 查看节点列表</h3><p>查看节点列表有 <code>ls path</code> 和 <code>ls2 path</code> 两个命令，后者是前者的增强，不仅可以查看指定路径下的所有节点，还可以查看当前节点的信息。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 0] ls /</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">[cluster, controller_epoch, brokers, storm, zookeeper, admin,  ...]</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 1] ls2 /</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">[cluster, controller_epoch, brokers, storm, zookeeper, admin, ....]</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">cZxid = 0x0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">ctime = Thu Jan 01 08:00:00 CST 1970</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">mZxid = 0x0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">mtime = Thu Jan 01 08:00:00 CST 1970</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">pZxid = 0x130</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">cversion = 19</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">dataVersion = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line">aclVersion = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">13</span></pre></td><td class="code"><pre><span class="line">ephemeralOwner = 0x0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">14</span></pre></td><td class="code"><pre><span class="line">dataLength = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">15</span></pre></td><td class="code"><pre><span class="line">numChildren = 11</span></pre></td></tr></table></figure>
+
+<h3 id="1-4-新增节点"><a href="#1-4-新增节点" class="headerlink" title="1.4 新增节点"></a>1.4 新增节点</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">create [-s] [-e] path data acl   #其中-s 为有序节点，-e 临时节点</span></pre></td></tr></table></figure>
+
+<p>创建节点并写入数据：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">create /hadoop 123456</span></pre></td></tr></table></figure>
+
+<p>创建有序节点，此时创建的节点名为指定节点名 + 自增序号：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 23] create -s /a  "aaa"</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">Created /a0000000022</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 24] create -s /b  "bbb"</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">Created /b0000000023</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 25] create -s /c  "ccc"</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">Created /c0000000024</span></pre></td></tr></table></figure>
+
+<p>创建临时节点，临时节点会在会话过期后被删除：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 26] create -e /tmp  "tmp"</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">Created /tmp</span></pre></td></tr></table></figure>
+
+<h3 id="1-5-查看节点"><a href="#1-5-查看节点" class="headerlink" title="1.5 查看节点"></a>1.5 查看节点</h3><h4 id="1-获取节点数据"><a href="#1-获取节点数据" class="headerlink" title="1. 获取节点数据"></a>1. 获取节点数据</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 格式</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">get path [watch]</span></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 31] get /hadoop</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">123456   #节点数据</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">cZxid = 0x14b</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">ctime = Fri May 24 17:03:06 CST 2019</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">mZxid = 0x14b</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">mtime = Fri May 24 17:03:06 CST 2019</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">pZxid = 0x14b</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">cversion = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">dataVersion = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">aclVersion = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">ephemeralOwner = 0x0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line">dataLength = 6</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">13</span></pre></td><td class="code"><pre><span class="line">numChildren = 0</span></pre></td></tr></table></figure>
+
+<p>节点各个属性如下表。其中一个重要的概念是 Zxid(ZooKeeper Transaction  Id)，ZooKeeper 节点的每一次更改都具有唯一的 Zxid，如果 Zxid1 小于 Zxid2，则 Zxid1 的更改发生在 Zxid2 更改之前。</p>
+<table>
+<thead>
+<tr>
+<th><strong>状态属性</strong></th>
+<th><strong>说明</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>cZxid</td>
+<td>数据节点创建时的事务 ID</td>
+</tr>
+<tr>
+<td>ctime</td>
+<td>数据节点创建时的时间</td>
+</tr>
+<tr>
+<td>mZxid</td>
+<td>数据节点最后一次更新时的事务 ID</td>
+</tr>
+<tr>
+<td>mtime</td>
+<td>数据节点最后一次更新时的时间</td>
+</tr>
+<tr>
+<td>pZxid</td>
+<td>数据节点的子节点最后一次被修改时的事务 ID</td>
+</tr>
+<tr>
+<td>cversion</td>
+<td>子节点的更改次数</td>
+</tr>
+<tr>
+<td>dataVersion</td>
+<td>节点数据的更改次数</td>
+</tr>
+<tr>
+<td>aclVersion</td>
+<td>节点的 ACL 的更改次数</td>
+</tr>
+<tr>
+<td>ephemeralOwner</td>
+<td>如果节点是临时节点，则表示创建该节点的会话的 SessionID；如果节点是持久节点，则该属性值为 0</td>
+</tr>
+<tr>
+<td>dataLength</td>
+<td>数据内容的长度</td>
+</tr>
+<tr>
+<td>numChildren</td>
+<td>数据节点当前的子节点个数</td>
+</tr>
+</tbody></table>
+<h4 id="2-查看节点状态"><a href="#2-查看节点状态" class="headerlink" title="2. 查看节点状态"></a>2. 查看节点状态</h4><p>可以使用 <code>stat</code> 命令查看节点状态，它的返回值和 <code>get</code> 命令类似，但不会返回节点数据。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 32] stat /hadoop</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">cZxid = 0x14b</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">ctime = Fri May 24 17:03:06 CST 2019</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">mZxid = 0x14b</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">mtime = Fri May 24 17:03:06 CST 2019</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">pZxid = 0x14b</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">cversion = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">dataVersion = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">aclVersion = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">ephemeralOwner = 0x0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">dataLength = 6</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line">numChildren = 0</span></pre></td></tr></table></figure>
+
+<h3 id="1-6-更新节点"><a href="#1-6-更新节点" class="headerlink" title="1.6 更新节点"></a>1.6 更新节点</h3><p>更新节点的命令是 <code>set</code>，可以直接进行修改，如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 33] set /hadoop 345</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">cZxid = 0x14b</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">ctime = Fri May 24 17:03:06 CST 2019</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">mZxid = 0x14c</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">mtime = Fri May 24 17:13:05 CST 2019</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">pZxid = 0x14b</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">cversion = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">dataVersion = 1  # 注意更改后此时版本号为 1，默认创建时为 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">aclVersion = 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">ephemeralOwner = 0x0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">dataLength = 3</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line">numChildren = 0</span></pre></td></tr></table></figure>
+
+<p>也可以基于版本号进行更改，此时类似于乐观锁机制，当你传入的数据版本号 (dataVersion) 和当前节点的数据版本号不符合时，zookeeper 会拒绝本次修改：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 34] set /hadoop 678 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">version No is not valid : /hadoop    #无效的版本号</span></pre></td></tr></table></figure>
+
+<h3 id="1-7-删除节点"><a href="#1-7-删除节点" class="headerlink" title="1.7 删除节点"></a>1.7 删除节点</h3><p>删除节点的语法如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">delete path [version]</span></pre></td></tr></table></figure>
+
+<p>和更新节点数据一样，也可以传入版本号，当你传入的数据版本号 (dataVersion) 和当前节点的数据版本号不符合时，zookeeper 不会执行删除操作。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 36] delete /hadoop 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">version No is not valid : /hadoop   #无效的版本号</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 37] delete /hadoop 1</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 38]</span></pre></td></tr></table></figure>
+
+<p>要想删除某个节点及其所有后代节点，可以使用递归删除，命令为 <code>rmr path</code>。</p>
+<h2 id="二、监听器"><a href="#二、监听器" class="headerlink" title="二、监听器"></a>二、监听器</h2><h3 id="2-1-get-path-watch"><a href="#2-1-get-path-watch" class="headerlink" title="2.1 get path [watch]"></a>2.1 get path [watch]</h3><p>使用 <code>get path [watch]</code> 注册的监听器能够在节点内容发生改变的时候，向客户端发出通知。需要注意的是 zookeeper 的触发器是一次性的 (One-time trigger)，即触发一次后就会立即失效。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 4] get /hadoop  watch</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 5] set /hadoop 45678</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">WATCHER::</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">WatchedEvent state:SyncConnected type:NodeDataChanged path:/hadoop  #节点值改变</span></pre></td></tr></table></figure>
+
+<h3 id="2-2-stat-path-watch"><a href="#2-2-stat-path-watch" class="headerlink" title="2.2 stat path [watch]"></a>2.2 stat path [watch]</h3><p>使用 <code>stat path [watch]</code> 注册的监听器能够在节点状态发生改变的时候，向客户端发出通知。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 7] stat /hadoop watch</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 8] set /hadoop 112233</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">WATCHER::</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">WatchedEvent state:SyncConnected type:NodeDataChanged path:/hadoop  #节点值改变</span></pre></td></tr></table></figure>
+
+<h3 id="2-3-ls-ls2-path-watch"><a href="#2-3-ls-ls2-path-watch" class="headerlink" title="2.3 ls\ls2 path  [watch]"></a>2.3 ls\ls2 path  [watch]</h3><p>使用 <code>ls path [watch]</code> 或 <code>ls2 path [watch]</code> 注册的监听器能够监听该节点下所有<strong>子节点</strong>的增加和删除操作。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 9] ls /hadoop watch</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">[]</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">[zk: localhost:2181(CONNECTED) 10] create  /hadoop/yarn "aaa"</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">WATCHER::</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">WatchedEvent state:SyncConnected type:NodeChildrenChanged path:/hadoop</span></pre></td></tr></table></figure>
+
+
+
+<h2 id="三、-zookeeper-四字命令"><a href="#三、-zookeeper-四字命令" class="headerlink" title="三、 zookeeper 四字命令"></a>三、 zookeeper 四字命令</h2><table>
+<thead>
+<tr>
+<th>命令</th>
+<th>功能描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>conf</td>
+<td>打印服务配置的详细信息。</td>
+</tr>
+<tr>
+<td>cons</td>
+<td>列出连接到此服务器的所有客户端的完整连接/会话详细信息。包括接收/发送的数据包数量，会话 ID，操作延迟，上次执行的操作等信息。</td>
+</tr>
+<tr>
+<td>dump</td>
+<td>列出未完成的会话和临时节点。这只适用于 Leader 节点。</td>
+</tr>
+<tr>
+<td>envi</td>
+<td>打印服务环境的详细信息。</td>
+</tr>
+<tr>
+<td>ruok</td>
+<td>测试服务是否处于正确状态。如果正确则返回“imok”，否则不做任何相应。</td>
+</tr>
+<tr>
+<td>stat</td>
+<td>列出服务器和连接客户端的简要详细信息。</td>
+</tr>
+<tr>
+<td>wchs</td>
+<td>列出所有 watch 的简单信息。</td>
+</tr>
+<tr>
+<td>wchc</td>
+<td>按会话列出服务器 watch 的详细信息。</td>
+</tr>
+<tr>
+<td>wchp</td>
+<td>按路径列出服务器 watch 的详细信息。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>更多四字命令可以参阅官方文档：<a href="https://zookeeper.apache.org/doc/current/zookeeperAdmin.html" target="_blank" rel="noopener">https://zookeeper.apache.org/doc/current/zookeeperAdmin.html</a></p>
+</blockquote>
+<p>使用前需要使用 <code>yum install nc</code> 安装 nc 命令，使用示例如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[root@hadoop001 bin]# echo stat | nc localhost 2181</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">Zookeeper version: 3.4.13-2d71af4dbe22557fda74f9a9b4309b15a7487f03, </span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">built on 06/29/2018 04:05 GMT</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">Clients:</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line"> /0:0:0:0:0:0:0:1:50584[1](queued=0,recved=371,sent=371)</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line"> /0:0:0:0:0:0:0:1:50656[0](queued=0,recved=1,sent=0)</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">Latency min/avg/max: 0/0/19</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">Received: 372</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">Sent: 371</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">Connections: 2</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">Outstanding: 0</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line">Zxid: 0x150</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">13</span></pre></td><td class="code"><pre><span class="line">Mode: standalone</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">14</span></pre></td><td class="code"><pre><span class="line">Node count: 167</span></pre></td></tr></table></figure>
+
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        <p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+

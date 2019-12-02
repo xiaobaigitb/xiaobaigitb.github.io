@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="Piece One">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="notes/installation/Linux下Flume的安装"/>
+  <meta property="og:description" content="爱吃鱼的Blog" />
+  <meta property="og:site_name" content="TLUYZ&#39;Blog"/>
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="http://yoursite.com"/>
+  
+    <link rel="alternate" href="/atom.xml" title="TLUYZ&#39;Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>TLUYZ'Blog</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">notes/installation/Linux下Flume的安装</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/xiaobaigitb" target="_blank" rel="noopener">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:<your-email-address>">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Piece One</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-12-02</span>
+            <span class="time">22:05:46</span>
+          </span>
+          
+        </div>
+        <!-- Tags -->
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <h1 id="Linux下Flume的安装"><a href="#Linux下Flume的安装" class="headerlink" title="Linux下Flume的安装"></a>Linux下Flume的安装</h1><h2 id="一、前置条件"><a href="#一、前置条件" class="headerlink" title="一、前置条件"></a>一、前置条件</h2><p>Flume 需要依赖 JDK 1.8+，JDK 安装方式见本仓库：</p>
+<blockquote>
+<p><a href="https://github.com/heibaiying/BigData-Notes/blob/master/notes/installation/Linux下JDK安装.md" target="_blank" rel="noopener">Linux 环境下 JDK 安装</a></p>
+</blockquote>
+<h2 id="二-、安装步骤"><a href="#二-、安装步骤" class="headerlink" title="二 、安装步骤"></a>二 、安装步骤</h2><h3 id="2-1-下载并解压"><a href="#2-1-下载并解压" class="headerlink" title="2.1 下载并解压"></a>2.1 下载并解压</h3><p>下载所需版本的 Flume，这里我下载的是 <code>CDH</code> 版本的 Flume。下载地址为：<a href="http://archive.cloudera.com/cdh5/cdh/5/" target="_blank" rel="noopener">http://archive.cloudera.com/cdh5/cdh/5/</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 下载后进行解压</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">tar -zxvf  flume-ng-1.6.0-cdh5.15.2.tar.gz</span></pre></td></tr></table></figure>
+
+<h3 id="2-2-配置环境变量"><a href="#2-2-配置环境变量" class="headerlink" title="2.2 配置环境变量"></a>2.2 配置环境变量</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> vim /etc/profile</span></span></pre></td></tr></table></figure>
+
+<p>添加环境变量：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">export FLUME_HOME=/usr/app/apache-flume-1.6.0-cdh5.15.2-bin</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">export PATH=$FLUME_HOME/bin:$PATH</span></pre></td></tr></table></figure>
+
+<p>使得配置的环境变量立即生效：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">source</span> /etc/profile</span></span></pre></td></tr></table></figure>
+
+<h3 id="2-3-修改配置"><a href="#2-3-修改配置" class="headerlink" title="2.3 修改配置"></a>2.3 修改配置</h3><p>进入安装目录下的 <code>conf/</code> 目录，拷贝 Flume 的环境配置模板 <code>flume-env.sh.template</code>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> cp flume-env.sh.template flume-env.sh</span></span></pre></td></tr></table></figure>
+
+<p>修改 <code>flume-env.sh</code>,指定 JDK 的安装路径：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Enviroment variables can be <span class="built_in">set</span> here.</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">export JAVA_HOME=/usr/java/jdk1.8.0_201</span></pre></td></tr></table></figure>
+
+<h3 id="2-4-验证"><a href="#2-4-验证" class="headerlink" title="2.4 验证"></a>2.4 验证</h3><p>由于已经将 Flume 的 bin 目录配置到环境变量，直接使用以下命令验证是否配置成功：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> flume-ng version</span></span></pre></td></tr></table></figure>
+
+<p>出现对应的版本信息则代表配置成功。</p>
+<p><img src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/flume-version.png" alt="flume-version"></p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        <p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="Piece One">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="notes/installation/HBase集群环境搭建"/>
+  <meta property="og:description" content="爱吃鱼的Blog" />
+  <meta property="og:site_name" content="TLUYZ&#39;Blog"/>
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="http://yoursite.com"/>
+  
+    <link rel="alternate" href="/atom.xml" title="TLUYZ&#39;Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>TLUYZ'Blog</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">notes/installation/HBase集群环境搭建</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/xiaobaigitb" target="_blank" rel="noopener">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:<your-email-address>">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Piece One</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-12-02</span>
+            <span class="time">22:05:46</span>
+          </span>
+          
+        </div>
+        <!-- Tags -->
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <h1 id="HBase集群环境配置"><a href="#HBase集群环境配置" class="headerlink" title="HBase集群环境配置"></a>HBase集群环境配置</h1><nav>
+<a href="#一集群规划">一、集群规划</a><br/>
+<a href="#二前置条件">二、前置条件</a><br/>
+<a href="#三集群搭建">三、集群搭建</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#31-下载并解压">3.1 下载并解压</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#32-配置环境变量">3.2 配置环境变量</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#33-集群配置">3.3 集群配置</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#34-HDFS客户端配置">3.4 HDFS客户端配置</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#35-安装包分发">3.5 安装包分发</a><br/>
+<a href="#四启动集群">四、启动集群</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#41-启动ZooKeeper集群">4.1 启动ZooKeeper集群</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#42-启动Hadoop集群">4.2 启动Hadoop集群</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#43-启动HBase集群">4.3 启动HBase集群</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#45-查看服务">4.5 查看服务</a><br/>
+</nav>
+
+
+
+<h2 id="一、集群规划"><a href="#一、集群规划" class="headerlink" title="一、集群规划"></a>一、集群规划</h2><p>这里搭建一个 3 节点的 HBase 集群，其中三台主机上均为 <code>Regin Server</code>。同时为了保证高可用，除了在 hadoop001 上部署主 <code>Master</code> 服务外，还在 hadoop002 上部署备用的 <code>Master</code> 服务。Master 服务由 Zookeeper 集群进行协调管理，如果主 <code>Master</code> 不可用，则备用 <code>Master</code> 会成为新的主 <code>Master</code>。</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase集群规划.png"/> </div>
+
+<h2 id="二、前置条件"><a href="#二、前置条件" class="headerlink" title="二、前置条件"></a>二、前置条件</h2><p>HBase 的运行需要依赖 Hadoop 和 JDK(<code>HBase 2.0+</code> 对应 <code>JDK 1.8+</code>) 。同时为了保证高可用，这里我们不采用 HBase 内置的 Zookeeper 服务，而采用外置的 Zookeeper 集群。相关搭建步骤可以参阅：</p>
+<ul>
+<li><a href="https://github.com/heibaiying/BigData-Notes/blob/master/notes/installation/Linux下JDK安装.md" target="_blank" rel="noopener">Linux 环境下 JDK 安装</a></li>
+<li><a href="https://github.com/heibaiying/BigData-Notes/blob/master/notes/installation/Zookeeper单机环境和集群环境搭建.md" target="_blank" rel="noopener">Zookeeper 单机环境和集群环境搭建</a></li>
+<li><a href="https://github.com/heibaiying/BigData-Notes/blob/master/notes/installation/Hadoop集群环境搭建.md" target="_blank" rel="noopener">Hadoop 集群环境搭建</a></li>
+</ul>
+<h2 id="三、集群搭建"><a href="#三、集群搭建" class="headerlink" title="三、集群搭建"></a>三、集群搭建</h2><h3 id="3-1-下载并解压"><a href="#3-1-下载并解压" class="headerlink" title="3.1 下载并解压"></a>3.1 下载并解压</h3><p>下载并解压，这里我下载的是 CDH 版本 HBase，下载地址为：<a href="http://archive.cloudera.com/cdh5/cdh/5/" target="_blank" rel="noopener">http://archive.cloudera.com/cdh5/cdh/5/</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> tar -zxvf hbase-1.2.0-cdh5.15.2.tar.gz</span></span></pre></td></tr></table></figure>
+
+<h3 id="3-2-配置环境变量"><a href="#3-2-配置环境变量" class="headerlink" title="3.2 配置环境变量"></a>3.2 配置环境变量</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> vim /etc/profile</span></span></pre></td></tr></table></figure>
+
+<p>添加环境变量：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">export HBASE_HOME=usr/app/hbase-1.2.0-cdh5.15.2</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">export PATH=$HBASE_HOME/bin:$PATH</span></pre></td></tr></table></figure>
+
+<p>使得配置的环境变量立即生效：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">source</span> /etc/profile</span></span></pre></td></tr></table></figure>
+
+<h3 id="3-3-集群配置"><a href="#3-3-集群配置" class="headerlink" title="3.3 集群配置"></a>3.3 集群配置</h3><p>进入 <code>${HBASE_HOME}/conf</code> 目录下，修改配置：</p>
+<h4 id="1-hbase-env-sh"><a href="#1-hbase-env-sh" class="headerlink" title="1. hbase-env.sh"></a>1. hbase-env.sh</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 配置JDK安装位置</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">export JAVA_HOME=/usr/java/jdk1.8.0_201</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 不使用内置的zookeeper服务</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">export HBASE_MANAGES_ZK=false</span></pre></td></tr></table></figure>
+
+<h4 id="2-hbase-site-xml"><a href="#2-hbase-site-xml" class="headerlink" title="2. hbase-site.xml"></a>2. hbase-site.xml</h4><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">        <span class="comment">&lt;!-- 指定 hbase 以分布式集群的方式运行 --&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>hbase.cluster.distributed<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>true<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">        <span class="comment">&lt;!-- 指定 hbase 在 HDFS 上的存储位置 --&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>hbase.rootdir<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>hdfs://hadoop001:8020/hbase<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">13</span></pre></td><td class="code"><pre><span class="line">        <span class="comment">&lt;!-- 指定 zookeeper 的地址--&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">14</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>hbase.zookeeper.quorum<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">15</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>hadoop001:2181,hadoop002:2181,hadoop003:2181<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">16</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">17</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span></pre></td></tr></table></figure>
+
+<h4 id="3-regionservers"><a href="#3-regionservers" class="headerlink" title="3. regionservers"></a>3. regionservers</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hadoop001</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">hadoop002</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">hadoop003</span></pre></td></tr></table></figure>
+
+<h4 id="4-backup-masters"><a href="#4-backup-masters" class="headerlink" title="4. backup-masters"></a>4. backup-masters</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hadoop002</span></pre></td></tr></table></figure>
+
+<p><code>backup-masters</code> 这个文件是不存在的，需要新建，主要用来指明备用的 master 节点，可以是多个，这里我们以 1 个为例。</p>
+<h3 id="3-4-HDFS客户端配置"><a href="#3-4-HDFS客户端配置" class="headerlink" title="3.4 HDFS客户端配置"></a>3.4 HDFS客户端配置</h3><p>这里有一个可选的配置：如果您在 Hadoop 集群上进行了 HDFS 客户端配置的更改，比如将副本系数 <code>dfs.replication</code> 设置成 5，则必须使用以下方法之一来使 HBase 知道，否则 HBase 将依旧使用默认的副本系数 3 来创建文件：</p>
+<blockquote>
+<ol>
+<li>Add a pointer to your <code>HADOOP_CONF_DIR</code> to the <code>HBASE_CLASSPATH</code> environment variable in <em>hbase-env.sh</em>.</li>
+<li>Add a copy of <em>hdfs-site.xml</em> (or <em>hadoop-site.xml</em>) or, better, symlinks, under <em>${HBASE_HOME}/conf</em>, or</li>
+<li>if only a small set of HDFS client configurations, add them to <em>hbase-site.xml</em>.</li>
+</ol>
+</blockquote>
+<p>以上是官方文档的说明，这里解释一下：</p>
+<p><strong>第一种</strong> ：将 Hadoop 配置文件的位置信息添加到 <code>hbase-env.sh</code> 的 <code>HBASE_CLASSPATH</code> 属性，示例如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">export HBASE_CLASSPATH=usr/app/hadoop-2.6.0-cdh5.15.2/etc/hadoop</span></pre></td></tr></table></figure>
+
+<p><strong>第二种</strong> ：将 Hadoop 的 <code>hdfs-site.xml</code> 或 <code>hadoop-site.xml</code> 拷贝到  <code>${HBASE_HOME}/conf</code> 目录下，或者通过符号链接的方式。如果采用这种方式的话，建议将两者都拷贝或建立符号链接，示例如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 拷贝</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">cp core-site.xml hdfs-site.xml /usr/app/hbase-1.2.0-cdh5.15.2/conf/</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 使用符号链接</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">ln -s   /usr/app/hadoop-2.6.0-cdh5.15.2/etc/hadoop/core-site.xml</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">ln -s   /usr/app/hadoop-2.6.0-cdh5.15.2/etc/hadoop/hdfs-site.xml</span></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注：<code>hadoop-site.xml</code> 这个配置文件现在叫做 <code>core-site.xml</code></p>
+</blockquote>
+<p><strong>第三种</strong> ：如果你只有少量更改，那么直接配置到 <code>hbase-site.xml</code> 中即可。</p>
+<h3 id="3-5-安装包分发"><a href="#3-5-安装包分发" class="headerlink" title="3.5 安装包分发"></a>3.5 安装包分发</h3><p>将 HBase 的安装包分发到其他服务器，分发后建议在这两台服务器上也配置一下 HBase 的环境变量。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">scp -r /usr/app/hbase-1.2.0-cdh5.15.2/  hadoop002:usr/app/</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">scp -r /usr/app/hbase-1.2.0-cdh5.15.2/  hadoop003:usr/app/</span></pre></td></tr></table></figure>
+
+
+
+<h2 id="四、启动集群"><a href="#四、启动集群" class="headerlink" title="四、启动集群"></a>四、启动集群</h2><h3 id="4-1-启动ZooKeeper集群"><a href="#4-1-启动ZooKeeper集群" class="headerlink" title="4.1 启动ZooKeeper集群"></a>4.1 启动ZooKeeper集群</h3><p>分别到三台服务器上启动 ZooKeeper 服务：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">zkServer.sh start</span></pre></td></tr></table></figure>
+
+<h3 id="4-2-启动Hadoop集群"><a href="#4-2-启动Hadoop集群" class="headerlink" title="4.2 启动Hadoop集群"></a>4.2 启动Hadoop集群</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动dfs服务</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">start-dfs.sh</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动yarn服务</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">start-yarn.sh</span></pre></td></tr></table></figure>
+
+<h3 id="4-3-启动HBase集群"><a href="#4-3-启动HBase集群" class="headerlink" title="4.3 启动HBase集群"></a>4.3 启动HBase集群</h3><p>进入 hadoop001 的 <code>${HBASE_HOME}/bin</code>，使用以下命令启动 HBase 集群。执行此命令后，会在 hadoop001 上启动 <code>Master</code> 服务，在 hadoop002 上启动备用 <code>Master</code> 服务，在 <code>regionservers</code> 文件中配置的所有节点启动 <code>region server</code> 服务。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">start-hbase.sh</span></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-5-查看服务"><a href="#4-5-查看服务" class="headerlink" title="4.5 查看服务"></a>4.5 查看服务</h3><p>访问 HBase 的 Web-UI 界面，这里我安装的 HBase 版本为 1.2，访问端口为 <code>60010</code>，如果你安装的是 2.0 以上的版本，则访问端口号为 <code>16010</code>。可以看到 <code>Master</code> 在 hadoop001 上，三个 <code>Regin Servers</code> 分别在 hadoop001，hadoop002，和 hadoop003 上，并且还有一个 <code>Backup Matser</code> 服务在 hadoop002 上。</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase-集群搭建1.png"/> </div>
+<br/>
+
+<p>hadoop002 上的 HBase 出于备用状态：</p>
+<br/>
+
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase-集群搭建2.png"/> </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        <p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+

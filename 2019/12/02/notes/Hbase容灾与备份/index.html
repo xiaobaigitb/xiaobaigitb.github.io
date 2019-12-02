@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="Piece One">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="notes/Hbase容灾与备份"/>
+  <meta property="og:description" content="爱吃鱼的Blog" />
+  <meta property="og:site_name" content="TLUYZ&#39;Blog"/>
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="http://yoursite.com"/>
+  
+    <link rel="alternate" href="/atom.xml" title="TLUYZ&#39;Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>TLUYZ'Blog</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">notes/Hbase容灾与备份</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/xiaobaigitb" target="_blank" rel="noopener">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:<your-email-address>">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Piece One</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-12-02</span>
+            <span class="time">22:05:46</span>
+          </span>
+          
+        </div>
+        <!-- Tags -->
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <h1 id="Hbase容灾与备份"><a href="#Hbase容灾与备份" class="headerlink" title="Hbase容灾与备份"></a>Hbase容灾与备份</h1><nav>
+<a href="#一前言">一、前言</a><br/>
+<a href="#二CopyTable">二、CopyTable</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#21-简介">2.1 简介</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#22-命令格式">2.2 命令格式</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#23-常用命令">2.3 常用命令</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#24-更多参数">2.4 更多参数</a><br/>
+<a href="#三ExportImport">三、Export/Import</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#31-简介">3.1 简介</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#32-命令格式">3.2 命令格式</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#33-常用命令">3.3 常用命令</a><br/>
+<a href="#四Snapshot">四、Snapshot</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#41-简介">4.1 简介</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#42-配置">4.2 配置</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#43-常用命令">4.3 常用命令</a><br/>
+</nav>
+
+<h2 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h2><p>本文主要介绍 Hbase 常用的三种简单的容灾备份方案，即<strong>CopyTable</strong>、<strong>Export</strong>/<strong>Import</strong>、<strong>Snapshot</strong>。分别介绍如下：</p>
+<h2 id="二、CopyTable"><a href="#二、CopyTable" class="headerlink" title="二、CopyTable"></a>二、CopyTable</h2><h3 id="2-1-简介"><a href="#2-1-简介" class="headerlink" title="2.1 简介"></a>2.1 简介</h3><p><strong>CopyTable</strong>可以将现有表的数据复制到新表中，具有以下特点：</p>
+<ul>
+<li>支持时间区间 、row 区间 、改变表名称 、改变列族名称 、以及是否 Copy 已被删除的数据等功能；</li>
+<li>执行命令前，需先创建与原表结构相同的新表；</li>
+<li><code>CopyTable</code> 的操作是基于 HBase Client API 进行的，即采用 <code>scan</code> 进行查询, 采用 <code>put</code> 进行写入。</li>
+</ul>
+<h3 id="2-2-命令格式"><a href="#2-2-命令格式" class="headerlink" title="2.2 命令格式"></a>2.2 命令格式</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">Usage: CopyTable [general options] [--starttime=X] [--endtime=Y] [--new.name=NEW] [--peer.adr=ADR] &lt;tablename&gt;</span></pre></td></tr></table></figure>
+
+<h3 id="2-3-常用命令"><a href="#2-3-常用命令" class="headerlink" title="2.3 常用命令"></a>2.3 常用命令</h3><ol>
+<li>同集群下 CopyTable</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase org.apache.hadoop.hbase.mapreduce.CopyTable --new.name=tableCopy  tableOrig</span></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>不同集群下 CopyTable</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 两表名称相同的情况</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">hbase org.apache.hadoop.hbase.mapreduce.CopyTable \</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">--peer.adr=dstClusterZK:2181:/hbase tableOrig</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line"></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 也可以指新的表名</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">hbase org.apache.hadoop.hbase.mapreduce.CopyTable \</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">--peer.adr=dstClusterZK:2181:/hbase \</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">--new.name=tableCopy tableOrig</span></pre></td></tr></table></figure>
+
+
+<ol start="3">
+<li>下面是一个官方给的比较完整的例子，指定开始和结束时间，集群地址，以及只复制指定的列族：</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase org.apache.hadoop.hbase.mapreduce.CopyTable \</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">--starttime=1265875194289 \</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">--endtime=1265878794289 \</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">--peer.adr=server1,server2,server3:2181:/hbase \</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">--families=myOldCf:myNewCf,cf2,cf3 TestTable</span></pre></td></tr></table></figure>
+
+<h3 id="2-4-更多参数"><a href="#2-4-更多参数" class="headerlink" title="2.4 更多参数"></a>2.4 更多参数</h3><p>可以通过 <code>--help</code> 查看更多支持的参数</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> hbase org.apache.hadoop.hbase.mapreduce.CopyTable --<span class="built_in">help</span></span></span></pre></td></tr></table></figure>
+
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hbase-copy-table.png"/> </div>
+
+
+
+<h2 id="三、Export-Import"><a href="#三、Export-Import" class="headerlink" title="三、Export/Import"></a>三、Export/Import</h2><h3 id="3-1-简介"><a href="#3-1-简介" class="headerlink" title="3.1 简介"></a>3.1 简介</h3><ul>
+<li><code>Export</code> 支持导出数据到 HDFS, <code>Import</code> 支持从 HDFS 导入数据。<code>Export</code> 还支持指定导出数据的开始时间和结束时间，因此可以用于增量备份。</li>
+<li><code>Export</code> 导出与 <code>CopyTable</code> 一样，依赖 HBase 的 <code>scan</code> 操作</li>
+</ul>
+<h3 id="3-2-命令格式"><a href="#3-2-命令格式" class="headerlink" title="3.2 命令格式"></a>3.2 命令格式</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Export</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">hbase org.apache.hadoop.hbase.mapreduce.Export &lt;tablename&gt; &lt;outputdir&gt; [&lt;versions&gt; [&lt;starttime&gt; [&lt;endtime&gt;]]]</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line"></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Inport</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">hbase org.apache.hadoop.hbase.mapreduce.Import &lt;tablename&gt; &lt;inputdir&gt;</span></pre></td></tr></table></figure>
+
+<ul>
+<li>导出的 <code>outputdir</code> 目录可以不用预先创建，程序会自动创建。导出完成后，导出文件的所有权将由执行导出命令的用户所拥有。</li>
+<li>默认情况下，仅导出给定 <code>Cell</code> 的最新版本，而不管历史版本。要导出多个版本，需要将 <code>&lt;versions&gt;</code> 参数替换为所需的版本数。</li>
+</ul>
+<h3 id="3-3-常用命令"><a href="#3-3-常用命令" class="headerlink" title="3.3 常用命令"></a>3.3 常用命令</h3><ol>
+<li>导出命令</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase org.apache.hadoop.hbase.mapreduce.Export tableName  hdfs 路径/tableName.db</span></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>导入命令</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hbase org.apache.hadoop.hbase.mapreduce.Import tableName  hdfs 路径&#x2F;tableName.db</span></pre></td></tr></table></figure>
+
+
+
+<h2 id="四、Snapshot"><a href="#四、Snapshot" class="headerlink" title="四、Snapshot"></a>四、Snapshot</h2><h3 id="4-1-简介"><a href="#4-1-简介" class="headerlink" title="4.1 简介"></a>4.1 简介</h3><p>HBase 的快照 (Snapshot) 功能允许您获取表的副本 (包括内容和元数据)，并且性能开销很小。因为快照存储的仅仅是表的元数据和 HFiles 的信息。快照的 <code>clone</code> 操作会从该快照创建新表，快照的 <code>restore</code> 操作会将表的内容还原到快照节点。<code>clone</code> 和 <code>restore</code> 操作不需要复制任何数据，因为底层 HFiles(包含 HBase 表数据的文件) 不会被修改，修改的只是表的元数据信息。</p>
+<h3 id="4-2-配置"><a href="#4-2-配置" class="headerlink" title="4.2 配置"></a>4.2 配置</h3><p>HBase 快照功能默认没有开启，如果要开启快照，需要在 <code>hbase-site.xml</code> 文件中添加如下配置项：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">name</span>&gt;</span>hbase.snapshot.enabled<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">value</span>&gt;</span>true<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-3-常用命令"><a href="#4-3-常用命令" class="headerlink" title="4.3 常用命令"></a>4.3 常用命令</h3><p>快照的所有命令都需要在 Hbase Shell 交互式命令行中执行。</p>
+<h4 id="1-Take-a-Snapshot"><a href="#1-Take-a-Snapshot" class="headerlink" title="1. Take a Snapshot"></a>1. Take a Snapshot</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 拍摄快照</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> snapshot <span class="string">'表名'</span>, <span class="string">'快照名'</span></span></span></pre></td></tr></table></figure>
+
+<p>默认情况下拍摄快照之前会在内存中执行数据刷新。以保证内存中的数据包含在快照中。但是如果你不希望包含内存中的数据，则可以使用 <code>SKIP_FLUSH</code> 选项禁止刷新。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 禁止内存刷新</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> snapshot  <span class="string">'表名'</span>, <span class="string">'快照名'</span>, &#123;SKIP_FLUSH =&gt; <span class="literal">true</span>&#125;</span></span></pre></td></tr></table></figure>
+
+<h4 id="2-Listing-Snapshots"><a href="#2-Listing-Snapshots" class="headerlink" title="2. Listing Snapshots"></a>2. Listing Snapshots</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 获取快照列表</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> list_snapshots</span></span></pre></td></tr></table></figure>
+
+<h4 id="3-Deleting-Snapshots"><a href="#3-Deleting-Snapshots" class="headerlink" title="3. Deleting Snapshots"></a>3. Deleting Snapshots</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 删除快照</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> delete_snapshot <span class="string">'快照名'</span></span></span></pre></td></tr></table></figure>
+
+<h4 id="4-Clone-a-table-from-snapshot"><a href="#4-Clone-a-table-from-snapshot" class="headerlink" title="4. Clone a table from snapshot"></a>4. Clone a table from snapshot</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 从现有的快照创建一张新表</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line"><span class="meta">hbase&gt;</span><span class="bash">  clone_snapshot <span class="string">'快照名'</span>, <span class="string">'新表名'</span></span></span></pre></td></tr></table></figure>
+
+<h4 id="5-Restore-a-snapshot"><a href="#5-Restore-a-snapshot" class="headerlink" title="5. Restore a snapshot"></a>5. Restore a snapshot</h4><p>将表恢复到快照节点，恢复操作需要先禁用表</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> <span class="built_in">disable</span> <span class="string">'表名'</span></span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line"><span class="meta">hbase&gt;</span><span class="bash"> restore_snapshot <span class="string">'快照名'</span></span></span></pre></td></tr></table></figure>
+
+<p>这里需要注意的是：是如果 HBase 配置了基于 Replication 的主从复制，由于 Replication 在日志级别工作，而快照在文件系统级别工作，因此在还原之后，会出现副本与主服务器处于不同的状态的情况。这时候可以先停止同步，所有服务器还原到一致的数据点后再重新建立同步。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ol>
+<li><a href="https://blog.cloudera.com/blog/2012/06/online-hbase-backups-with-copytable-2/" target="_blank" rel="noopener">Online Apache HBase Backups with CopyTable</a></li>
+<li><a href="http://hbase.apache.org/book.htm" target="_blank" rel="noopener">Apache HBase ™ Reference Guide</a></li>
+</ol>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        <p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+

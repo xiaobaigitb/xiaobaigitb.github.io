@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="Piece One">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="notes/installation/Hadoop单机环境搭建"/>
+  <meta property="og:description" content="爱吃鱼的Blog" />
+  <meta property="og:site_name" content="TLUYZ&#39;Blog"/>
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="http://yoursite.com"/>
+  
+    <link rel="alternate" href="/atom.xml" title="TLUYZ&#39;Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>TLUYZ'Blog</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">notes/installation/Hadoop单机环境搭建</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/xiaobaigitb" target="_blank" rel="noopener">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:<your-email-address>">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Piece One</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-12-02</span>
+            <span class="time">22:05:46</span>
+          </span>
+          
+        </div>
+        <!-- Tags -->
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <h1 id="Hadoop单机版环境搭建"><a href="#Hadoop单机版环境搭建" class="headerlink" title="Hadoop单机版环境搭建"></a>Hadoop单机版环境搭建</h1><nav>
+<a href="#一前置条件">一、前置条件</a><br/>
+<a href="#二配置-SSH-免密登录">二、配置 SSH 免密登录</a><br/>
+<a href="#三HadoopHDFS环境搭建">三、Hadoop(HDFS)环境搭建</a><br/>
+<a href="#四HadoopYARN环境搭建">四、Hadoop(YARN)环境搭建</a><br/>
+</nav>
+
+
+
+
+<h2 id="一、前置条件"><a href="#一、前置条件" class="headerlink" title="一、前置条件"></a>一、前置条件</h2><p>Hadoop 的运行依赖 JDK，需要预先安装，安装步骤见：</p>
+<ul>
+<li><a href="https://github.com/heibaiying/BigData-Notes/blob/master/notes/installation/Linux下JDK安装.md" target="_blank" rel="noopener">Linux 下 JDK 的安装</a></li>
+</ul>
+<h2 id="二、配置免密登录"><a href="#二、配置免密登录" class="headerlink" title="二、配置免密登录"></a>二、配置免密登录</h2><p>Hadoop 组件之间需要基于 SSH 进行通讯。</p>
+<h4 id="2-1-配置映射"><a href="#2-1-配置映射" class="headerlink" title="2.1 配置映射"></a>2.1 配置映射</h4><p>配置 ip 地址和主机名映射：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">vim /etc/hosts</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 文件末尾增加</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">192.168.43.202  hadoop001</span></pre></td></tr></table></figure>
+
+<h3 id="2-2-生成公私钥"><a href="#2-2-生成公私钥" class="headerlink" title="2.2  生成公私钥"></a>2.2  生成公私钥</h3><p>执行下面命令行生成公匙和私匙：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">ssh-keygen -t rsa</span></pre></td></tr></table></figure>
+
+<h3 id="3-3-授权"><a href="#3-3-授权" class="headerlink" title="3.3 授权"></a>3.3 授权</h3><p>进入 <code>~/.ssh</code> 目录下，查看生成的公匙和私匙，并将公匙写入到授权文件：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[root@@hadoop001 sbin]#  cd ~/.ssh</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">[root@@hadoop001 .ssh]# ll</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">-rw-------. 1 root root 1675 3 月  15 09:48 id_rsa</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">-rw-r--r--. 1 root root  388 3 月  15 09:48 id_rsa.pub</span></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 写入公匙到授权文件</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">[root@hadoop001 .ssh]# cat id_rsa.pub &gt;&gt; authorized_keys</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">[root@hadoop001 .ssh]# chmod 600 authorized_keys</span></pre></td></tr></table></figure>
+
+
+
+<h2 id="三、Hadoop-HDFS-环境搭建"><a href="#三、Hadoop-HDFS-环境搭建" class="headerlink" title="三、Hadoop(HDFS)环境搭建"></a>三、Hadoop(HDFS)环境搭建</h2><h3 id="3-1-下载并解压"><a href="#3-1-下载并解压" class="headerlink" title="3.1 下载并解压"></a>3.1 下载并解压</h3><p>下载 Hadoop 安装包，这里我下载的是 CDH 版本的，下载地址为：<a href="http://archive.cloudera.com/cdh5/cdh/5/" target="_blank" rel="noopener">http://archive.cloudera.com/cdh5/cdh/5/</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 解压</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">tar -zvxf hadoop-2.6.0-cdh5.15.2.tar.gz</span></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-2-配置环境变量"><a href="#3-2-配置环境变量" class="headerlink" title="3.2 配置环境变量"></a>3.2 配置环境变量</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> vi /etc/profile</span></span></pre></td></tr></table></figure>
+
+<p>配置环境变量：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">export HADOOP_HOME&#x3D;&#x2F;usr&#x2F;app&#x2F;hadoop-2.6.0-cdh5.15.2</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">export  PATH&#x3D;$&#123;HADOOP_HOME&#125;&#x2F;bin:$PATH</span></pre></td></tr></table></figure>
+
+<p>执行 <code>source</code> 命令，使得配置的环境变量立即生效：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">source</span> /etc/profile</span></span></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-3-修改Hadoop配置"><a href="#3-3-修改Hadoop配置" class="headerlink" title="3.3 修改Hadoop配置"></a>3.3 修改Hadoop配置</h3><p>进入 <code>${HADOOP_HOME}/etc/hadoop/</code> 目录下，修改以下配置：</p>
+<h4 id="1-hadoop-env-sh"><a href="#1-hadoop-env-sh" class="headerlink" title="1. hadoop-env.sh"></a>1. hadoop-env.sh</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> JDK安装路径</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">export  JAVA_HOME=/usr/java/jdk1.8.0_201/</span></pre></td></tr></table></figure>
+
+<h4 id="2-core-site-xml"><a href="#2-core-site-xml" class="headerlink" title="2. core-site.xml"></a>2. core-site.xml</h4><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">        <span class="comment">&lt;!--指定 namenode 的 hdfs 协议文件系统的通信地址--&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>fs.defaultFS<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>hdfs://hadoop001:8020<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">        <span class="comment">&lt;!--指定 hadoop 存储临时文件的目录--&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>hadoop.tmp.dir<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>/home/hadoop/tmp<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span></pre></td></tr></table></figure>
+
+<h4 id="3-hdfs-site-xml"><a href="#3-hdfs-site-xml" class="headerlink" title="3. hdfs-site.xml"></a>3. hdfs-site.xml</h4><p>指定副本系数和临时文件存储位置：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">        <span class="comment">&lt;!--由于我们这里搭建是单机版本，所以指定 dfs 的副本系数为 1--&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>dfs.replication<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>1<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span></pre></td></tr></table></figure>
+
+<h4 id="4-slaves"><a href="#4-slaves" class="headerlink" title="4. slaves"></a>4. slaves</h4><p>配置所有从属节点的主机名或 IP 地址，由于是单机版本，所以指定本机即可：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">hadoop001</span></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-4-关闭防火墙"><a href="#3-4-关闭防火墙" class="headerlink" title="3.4 关闭防火墙"></a>3.4 关闭防火墙</h3><p>不关闭防火墙可能导致无法访问 Hadoop 的 Web UI 界面：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看防火墙状态</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">sudo firewall-cmd --state</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 关闭防火墙:</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">sudo systemctl stop firewalld.service</span></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-5-初始化"><a href="#3-5-初始化" class="headerlink" title="3.5 初始化"></a>3.5 初始化</h3><p>第一次启动 Hadoop 时需要进行初始化，进入 <code>${HADOOP_HOME}/bin/</code> 目录下，执行以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[root@hadoop001 bin]# ./hdfs namenode -format</span></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-6-启动HDFS"><a href="#3-6-启动HDFS" class="headerlink" title="3.6 启动HDFS"></a>3.6 启动HDFS</h3><p>进入 <code>${HADOOP_HOME}/sbin/</code> 目录下，启动 HDFS：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[root@hadoop001 sbin]# ./start-dfs.sh</span></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-7-验证是否启动成功"><a href="#3-7-验证是否启动成功" class="headerlink" title="3.7 验证是否启动成功"></a>3.7 验证是否启动成功</h3><p>方式一：执行 <code>jps</code> 查看 <code>NameNode</code> 和 <code>DataNode</code> 服务是否已经启动：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[root@hadoop001 hadoop-2.6.0-cdh5.15.2]# jps</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">9137 DataNode</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">9026 NameNode</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">9390 SecondaryNameNode</span></pre></td></tr></table></figure>
+
+
+
+<p>方式二：查看 Web UI 界面，端口为 <code>50070</code>：</p>
+<div align="center"> <img width="700px" src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hadoop安装验证.png"/> </div>
+
+
+<h2 id="四、Hadoop-YARN-环境搭建"><a href="#四、Hadoop-YARN-环境搭建" class="headerlink" title="四、Hadoop(YARN)环境搭建"></a>四、Hadoop(YARN)环境搭建</h2><h3 id="4-1-修改配置"><a href="#4-1-修改配置" class="headerlink" title="4.1 修改配置"></a>4.1 修改配置</h3><p>进入 <code>${HADOOP_HOME}/etc/hadoop/</code> 目录下，修改以下配置：</p>
+<h4 id="1-mapred-site-xml"><a href="#1-mapred-site-xml" class="headerlink" title="1. mapred-site.xml"></a>1. mapred-site.xml</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 如果没有mapred-site.xml，则拷贝一份样例文件后再修改</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">cp mapred-site.xml.template mapred-site.xml</span></pre></td></tr></table></figure>
+
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>mapreduce.framework.name<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>yarn<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span></pre></td></tr></table></figure>
+
+<h4 id="2-yarn-site-xml"><a href="#2-yarn-site-xml" class="headerlink" title="2. yarn-site.xml"></a>2. yarn-site.xml</h4><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">        <span class="comment">&lt;!--配置 NodeManager 上运行的附属服务。需要配置成 mapreduce_shuffle 后才可以在 Yarn 上运行 MapReduce 程序。--&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.aux-services<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>mapreduce_shuffle<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-2-启动服务"><a href="#4-2-启动服务" class="headerlink" title="4.2 启动服务"></a>4.2 启动服务</h3><p>进入 <code>${HADOOP_HOME}/sbin/</code> 目录下，启动 YARN：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">./start-yarn.sh</span></pre></td></tr></table></figure>
+
+
+
+<h4 id="4-3-验证是否启动成功"><a href="#4-3-验证是否启动成功" class="headerlink" title="4.3 验证是否启动成功"></a>4.3 验证是否启动成功</h4><p>方式一：执行 <code>jps</code> 命令查看 <code>NodeManager</code> 和 <code>ResourceManager</code> 服务是否已经启动：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">[root@hadoop001 hadoop-2.6.0-cdh5.15.2]# jps</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">9137 DataNode</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">9026 NameNode</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">12294 NodeManager</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">12185 ResourceManager</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">9390 SecondaryNameNode</span></pre></td></tr></table></figure>
+
+<p>方式二：查看 Web UI 界面，端口号为 <code>8088</code>：</p>
+<div align="center"> <img width="700px" src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/hadoop-yarn安装验证.png"/> </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        <p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+

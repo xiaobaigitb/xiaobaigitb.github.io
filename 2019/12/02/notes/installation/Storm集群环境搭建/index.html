@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="Piece One">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="notes/installation/Storm集群环境搭建"/>
+  <meta property="og:description" content="爱吃鱼的Blog" />
+  <meta property="og:site_name" content="TLUYZ&#39;Blog"/>
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="http://yoursite.com"/>
+  
+    <link rel="alternate" href="/atom.xml" title="TLUYZ&#39;Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>TLUYZ'Blog</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">notes/installation/Storm集群环境搭建</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/xiaobaigitb" target="_blank" rel="noopener">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:<your-email-address>">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Piece One</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-12-02</span>
+            <span class="time">22:05:46</span>
+          </span>
+          
+        </div>
+        <!-- Tags -->
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <h1 id="Storm集群环境搭建"><a href="#Storm集群环境搭建" class="headerlink" title="Storm集群环境搭建"></a>Storm集群环境搭建</h1><nav>
+<a href="#一集群规划">一、集群规划</a><br/>
+<a href="#二前置条件">二、前置条件</a><br/>
+<a href="#三集群搭建">三、集群搭建</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#1-下载并解压">1. 下载并解压</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2-配置环境变量">2. 配置环境变量</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#3-集群配置">3. 集群配置</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#4-安装包分发">4. 安装包分发</a><br/>
+<a href="#四-启动集群">四. 启动集群</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#41-启动ZooKeeper集群">4.1 启动ZooKeeper集群</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#42-启动Storm集群">4.2 启动Storm集群</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#43-查看集群">4.3 查看集群</a><br/>
+<a href="#五高可用验证">五、高可用验证</a><br/>
+</nav>
+
+
+
+
+
+
+
+<h2 id="一、集群规划"><a href="#一、集群规划" class="headerlink" title="一、集群规划"></a>一、集群规划</h2><p>这里搭建一个 3 节点的 Storm 集群：三台主机上均部署 <code>Supervisor</code> 和 <code>LogViewer</code> 服务。同时为了保证高可用，除了在 hadoop001 上部署主 <code>Nimbus</code> 服务外，还在 hadoop002 上部署备用的 <code>Nimbus</code> 服务。<code>Nimbus</code> 服务由 Zookeeper 集群进行协调管理，如果主 <code>Nimbus</code> 不可用，则备用 <code>Nimbus</code> 会成为新的主 <code>Nimbus</code>。</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/storm-集群规划.png"/> </div>
+
+<h2 id="二、前置条件"><a href="#二、前置条件" class="headerlink" title="二、前置条件"></a>二、前置条件</h2><p>Storm 运行依赖于 Java 7+ 和 Python 2.6.6 +，所以需要预先安装这两个软件。同时为了保证高可用，这里我们不采用 Storm 内置的 Zookeeper，而采用外置的 Zookeeper 集群。由于这三个软件在多个框架中都有依赖，其安装步骤单独整理至 ：</p>
+<ul>
+<li><a href="https://github.com/heibaiying/BigData-Notes/blob/master/notes/installation/Linux下JDK安装.md" target="_blank" rel="noopener">Linux 环境下 JDK 安装</a></li>
+<li><a href="https://github.com/heibaiying/BigData-Notes/blob/master/notes/installation/Linux下Python安装.md" target="_blank" rel="noopener">Linux 环境下 Python 安装</a></li>
+<li><a href="https://github.com/heibaiying/BigData-Notes/blob/master/notes/installation/Zookeeper单机环境和集群环境搭建.md" target="_blank" rel="noopener">Zookeeper 单机环境和集群环境搭建</a></li>
+</ul>
+<h2 id="三、集群搭建"><a href="#三、集群搭建" class="headerlink" title="三、集群搭建"></a>三、集群搭建</h2><h3 id="1-下载并解压"><a href="#1-下载并解压" class="headerlink" title="1. 下载并解压"></a>1. 下载并解压</h3><p>下载安装包，之后进行解压。官方下载地址：<a href="http://storm.apache.org/downloads.html" target="_blank" rel="noopener">http://storm.apache.org/downloads.html</a> </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 解压</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">tar -zxvf apache-storm-1.2.2.tar.gz</span></pre></td></tr></table></figure>
+
+<h3 id="2-配置环境变量"><a href="#2-配置环境变量" class="headerlink" title="2. 配置环境变量"></a>2. 配置环境变量</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> vim /etc/profile</span></span></pre></td></tr></table></figure>
+
+<p>添加环境变量：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">export STORM_HOME=/usr/app/apache-storm-1.2.2</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">export PATH=$STORM_HOME/bin:$PATH</span></pre></td></tr></table></figure>
+
+<p>使得配置的环境变量生效：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">source</span> /etc/profile</span></span></pre></td></tr></table></figure>
+
+<h3 id="3-集群配置"><a href="#3-集群配置" class="headerlink" title="3. 集群配置"></a>3. 集群配置</h3><p>修改 <code>${STORM_HOME}/conf/storm.yaml</code> 文件，配置如下：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="comment"># Zookeeper集群的主机列表</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line"><span class="attr">storm.zookeeper.servers:</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line">     <span class="bullet">-</span> <span class="string">"hadoop001"</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">     <span class="bullet">-</span> <span class="string">"hadoop002"</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line">     <span class="bullet">-</span> <span class="string">"hadoop003"</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line"></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line"><span class="comment"># Nimbus的节点列表</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line"><span class="attr">nimbus.seeds:</span> <span class="string">["hadoop001","hadoop002"]</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">9</span></pre></td><td class="code"><pre><span class="line"></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">10</span></pre></td><td class="code"><pre><span class="line"><span class="comment"># Nimbus和Supervisor需要使用本地磁盘上来存储少量状态（如jar包，配置文件等）</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">11</span></pre></td><td class="code"><pre><span class="line"><span class="attr">storm.local.dir:</span> <span class="string">"/home/storm"</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">12</span></pre></td><td class="code"><pre><span class="line"></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">13</span></pre></td><td class="code"><pre><span class="line"><span class="comment"># workers进程的端口，每个worker进程会使用一个端口来接收消息</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">14</span></pre></td><td class="code"><pre><span class="line"><span class="attr">supervisor.slots.ports:</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">15</span></pre></td><td class="code"><pre><span class="line">     <span class="bullet">-</span> <span class="number">6700</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">16</span></pre></td><td class="code"><pre><span class="line">     <span class="bullet">-</span> <span class="number">6701</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">17</span></pre></td><td class="code"><pre><span class="line">     <span class="bullet">-</span> <span class="number">6702</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">18</span></pre></td><td class="code"><pre><span class="line">     <span class="bullet">-</span> <span class="number">6703</span></span></pre></td></tr></table></figure>
+
+<p><code>supervisor.slots.ports</code> 参数用来配置 workers 进程接收消息的端口，默认每个 supervisor 节点上会启动 4 个 worker，当然你也可以按照自己的需要和服务器性能进行设置，假设只想启动 2 个 worker 的话，此处配置 2 个端口即可。</p>
+<h3 id="4-安装包分发"><a href="#4-安装包分发" class="headerlink" title="4. 安装包分发"></a>4. 安装包分发</h3><p>将 Storm 的安装包分发到其他服务器，分发后建议在这两台服务器上也配置一下 Storm 的环境变量。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">scp -r /usr/app/apache-storm-1.2.2/ root@hadoop002:/usr/app/</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">scp -r /usr/app/apache-storm-1.2.2/ root@hadoop003:/usr/app/</span></pre></td></tr></table></figure>
+
+
+
+<h2 id="四-启动集群"><a href="#四-启动集群" class="headerlink" title="四. 启动集群"></a>四. 启动集群</h2><h3 id="4-1-启动ZooKeeper集群"><a href="#4-1-启动ZooKeeper集群" class="headerlink" title="4.1 启动ZooKeeper集群"></a>4.1 启动ZooKeeper集群</h3><p>分别到三台服务器上启动 ZooKeeper 服务：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line">zkServer.sh start</span></pre></td></tr></table></figure>
+
+<h3 id="4-2-启动Storm集群"><a href="#4-2-启动Storm集群" class="headerlink" title="4.2 启动Storm集群"></a>4.2 启动Storm集群</h3><p>因为要启动多个进程，所以统一采用后台进程的方式启动。进入到 <code>${STORM_HOME}/bin</code> 目录下，执行下面的命令：</p>
+<p><strong>hadoop001 &amp; hadoop002 ：</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动主节点 nimbus</span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">nohup sh storm nimbus &amp;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动从节点 supervisor </span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">nohup sh storm supervisor &amp;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">5</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动UI界面 ui  </span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">6</span></pre></td><td class="code"><pre><span class="line">nohup sh storm ui &amp;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">7</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动日志查看服务 logviewer </span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">8</span></pre></td><td class="code"><pre><span class="line">nohup sh storm logviewer &amp;</span></pre></td></tr></table></figure>
+
+<p><strong>hadoop003 ：</strong></p>
+<p>hadoop003 上只需要启动 <code>supervisor</code> 服务和 <code>logviewer</code> 服务：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动从节点 supervisor </span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">2</span></pre></td><td class="code"><pre><span class="line">nohup sh storm supervisor &amp;</span></pre></td></tr><tr><td class="gutter"><pre><span class="line">3</span></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动日志查看服务 logviewer </span></span></pre></td></tr><tr><td class="gutter"><pre><span class="line">4</span></pre></td><td class="code"><pre><span class="line">nohup sh storm logviewer &amp;</span></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-3-查看集群"><a href="#4-3-查看集群" class="headerlink" title="4.3 查看集群"></a>4.3 查看集群</h3><p>使用 <code>jps</code> 查看进程，三台服务器的进程应该分别如下：</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/storm-集群-shell.png"/> </div>
+
+
+<br/>
+
+<p>访问 hadoop001 或 hadoop002 的 <code>8080</code> 端口，界面如下。可以看到有一主一备 2 个 <code>Nimbus</code> 和 3 个 <code>Supervisor</code>，并且每个 <code>Supervisor</code> 有四个 <code>slots</code>，即四个可用的 <code>worker</code> 进程，此时代表集群已经搭建成功。</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/storm-集群搭建1.png"/> </div>
+
+
+<h2 id="五、高可用验证"><a href="#五、高可用验证" class="headerlink" title="五、高可用验证"></a>五、高可用验证</h2><p>这里手动模拟主 <code>Nimbus</code> 异常的情况，在 hadoop001 上使用 <code>kill</code> 命令杀死 <code>Nimbus</code> 的线程，此时可以看到 hadoop001 上的 <code>Nimbus</code> 已经处于 <code>offline</code> 状态，而 hadoop002 上的 <code>Nimbus</code> 则成为新的 <code>Leader</code>。</p>
+<div align="center"> <img  src="https://github.com/heibaiying/BigData-Notes/blob/master/pictures/storm集群搭建2.png"/> </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        <p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+
